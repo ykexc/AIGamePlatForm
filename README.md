@@ -19,10 +19,10 @@
 # 绕蛇
 
 本游戏与传统的贪吃蛇游戏有所不同,游戏采用固定蛇的长度，两名玩家可以真人操作也可以使用bot操作，让对手撞到墙上或蛇身体上，自己即可获胜。
-![image-20231006185522059](C:\Users\86152\Desktop\AIGamePlatForm\img\image-20231006185522059.png)
+![image-20231006185522059](https://raw.githubusercontent.com/ykexc/AIGamePlatForm/main/img/image-20231006185522059.png)
 
 每局开始时都会有提示，告知自己位于哪一方.如果是真人匹配可以通过上下左右四个方向键来控制蛇前进的方向(需要在3s内做出响应).如果是bot不需要任何操作,观战即可。
-![image-20231006185817111](C:\Users\86152\Desktop\AIGamePlatForm\img\image-20231006185817111.png)
+<img src="https://raw.githubusercontent.com/ykexc/AIGamePlatForm/main/img/image-20231006185817111.png" alt="image-20231006185817111" style="zoom:80%;" />
 下面是Java和c++的演示程序
 
 ```java
@@ -232,7 +232,7 @@ int main() {
 # 五子棋
 
 五子棋玩法与传统玩法相同,分为黑方和白方,采用回合制玩法,玩家每回合的思考时间不能超过1min,bot代码的运行时间复杂度需控制在1s内。
-![image-20231006185841592](C:\Users\86152\Desktop\AIGamePlatForm\img\image-20231006185841592.png)
+![image-20231006185841592](https://raw.githubusercontent.com/ykexc/AIGamePlatForm/main/img/image-20231006185841592.png)
 以下是Java和C++的示例代码(因五子棋的bot算法较为复杂,以下提供的只能按行列枚举走)
 
 ```java
