@@ -6,22 +6,26 @@ import com.kob.backend.consumer.snake.WebSocketServer;
 import com.kob.backend.pojo.Bot;
 import com.kob.backend.pojo.Record;
 import com.kob.backend.pojo.User;
+import com.kob.backend.pojo.vo.DayRankVo;
+import com.kob.common.constant.Constant;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
+
 @Component
 public class Game extends Thread {
-    private  Integer rows;
-    private  Integer cols;
-    private  Integer inner_walls_count;
-    private  int[][] g;
+    private Integer rows;
+    private Integer cols;
+    private Integer inner_walls_count;
+    private int[][] g;
     private static final int[] dx = {-1, 0, 1, 0}, dy = {0, 1, 0, -1};
-    private  Player playerA;
-    private  Player playerB;
+    private Player playerA;
+    private Player playerB;
     private static final String ADD_BOT_URL = "http://127.0.0.1:3002/bot/add/";
 
     private static Api api;
@@ -34,6 +38,8 @@ public class Game extends Thread {
     private String loser = "";
 
     private final ReentrantLock lock = new ReentrantLock();
+
+    private static RedisTemplate<String, Object> redisTemplate;
 
     public Player getPlayerA() {
         return playerA;
@@ -49,7 +55,13 @@ public class Game extends Thread {
         Game.api = api;
     }
 
-    public Game(){}
+    @Autowired
+    public void setRedisTemplate(RedisTemplate<String, Object> redisTemplate) {
+        Game.redisTemplate = redisTemplate;
+    }
+
+    public Game() {
+    }
 
     public Game(Integer rows, Integer cols, Integer inner_walls_count,
                 Integer idA, Bot botA, Integer idB, Bot botB) {
@@ -231,7 +243,7 @@ public class Game extends Thread {
         if (player.getBotId().equals(-1)) return;
         //  System.out.println("playerA" + playerA);
         //  System.out.println("playerB" + playerB);
-        Map<String, String> req = new HashMap<String, String>(){{
+        Map<String, String> req = new HashMap<String, String>() {{
             put("status", "2");
             put("game", "snake");
             put("container", player.getContainer());
@@ -277,12 +289,12 @@ public class Game extends Thread {
             you = playerA;
         }
         return getMapString() + "#"
-                + me.getSx() + "#"
-                + me.getSy() + "#("
-                + me.getStepToString() + ")#"
-                + you.getSx() + "#"
-                + you.getSy() + "#("
-                + you.getStepToString() + ")";
+               + me.getSx() + "#"
+               + me.getSy() + "#("
+               + me.getStepToString() + ")#"
+               + you.getSx() + "#"
+               + you.getSy() + "#("
+               + you.getStepToString() + ")";
 
     }
 
@@ -339,8 +351,10 @@ public class Game extends Thread {
     }
 
     public void saveToDataBase() {
-        Integer ratingA = WebSocketServer.userMapper.selectById(playerA.getId()).getRating();
-        Integer ratingB = WebSocketServer.userMapper.selectById(playerB.getId()).getRating();
+        User userA = WebSocketServer.userMapper.selectById(playerA.getId());
+        User userB = WebSocketServer.userMapper.selectById(playerB.getId());
+        Integer ratingA = userA.getRating();
+        Integer ratingB = userB.getRating();
         if ("A".equals(loser)) {
             ratingA -= 5;
             ratingB += 5;
@@ -348,6 +362,16 @@ public class Game extends Thread {
             ratingB += 5;
             ratingA -= 5;
         }
+        DayRankVo a = new DayRankVo() {{
+            setPhoto(userA.getPhoto());
+            setUsername(userA.getUsername());
+        }};
+        DayRankVo b = new DayRankVo(){{
+            setPhoto(userB.getPhoto());
+            setUsername(userB.getUsername());
+        }};
+        redisTemplate.opsForZSet().add(Constant.Redis.DAY_RANK, a, ratingA + (1 - System.currentTimeMillis() * 1e-13));
+        redisTemplate.opsForZSet().add(Constant.Redis.DAY_RANK, b, ratingB + (1 - System.currentTimeMillis() * 1e-13));
         updateRating(playerA, ratingA);
         updateRating(playerB, ratingB);
         Record record = new Record(

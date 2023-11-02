@@ -7,10 +7,13 @@ import com.kob.backend.consumer.snake.game.Game;
 import com.kob.backend.pojo.Bot;
 import com.kob.backend.pojo.Record;
 import com.kob.backend.pojo.User;
+import com.kob.backend.pojo.vo.DayRankVo;
+import com.kob.common.constant.Constant;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -50,9 +53,17 @@ public class GobangGame extends Thread {
 
     private static Api api;
 
+    private static RedisTemplate<String, Object> redisTemplate;
+
     @Autowired
     public void setApi(Api api) {
         GobangGame.api = api;
+    }
+
+
+    @Autowired
+    public void setRedisTemplate(RedisTemplate<String, Object> redisTemplate) {
+        GobangGame.redisTemplate = redisTemplate;
     }
 
     public GobangGame(Integer userAId, Integer userBId, Bot botA, Bot botB) {
@@ -267,13 +278,27 @@ public class GobangGame extends Thread {
         User userA = GobangWebsocketServer.userMapper.selectById(AId);
         User userB = GobangWebsocketServer.userMapper.selectById(BId);
         Integer ratingA = userA.getRating(), ratingB = userB.getRating();
+        DayRankVo a = new DayRankVo(), b = new DayRankVo();
+        a.setUsername(userA.getUsername());
+        a.setPhoto(userA.getPhoto());
+        b.setUsername(userB.getUsername());
+        b.setPhoto(userB.getPhoto());
         if ("A".equals(loser)) {
+            redisTemplate.opsForZSet().add(Constant.Redis.DAY_RANK, a,
+                    (ratingA - 5) + (1 - System.currentTimeMillis() * 1e-13));
+            redisTemplate.opsForZSet().add(Constant.Redis.DAY_RANK, b,
+                    (ratingB + 5) + (1 - System.currentTimeMillis() * 1e-13));
             userA.setRating(ratingA - 5);
-            userB.setRating(ratingA + 5);
+            userB.setRating(ratingB + 5);
         } else {
+            redisTemplate.opsForZSet().add(Constant.Redis.DAY_RANK, a,
+                    (ratingA + 5) + (1 - System.currentTimeMillis() * 1e-13));
+            redisTemplate.opsForZSet().add(Constant.Redis.DAY_RANK, b,
+                    (ratingB - 5) + (1 - System.currentTimeMillis() * 1e-13));
             userA.setRating(ratingA + 5);
             userB.setRating(ratingB - 5);
         }
+
         GobangWebsocketServer.userMapper.updateById(userA);
         GobangWebsocketServer.userMapper.updateById(userB);
         String aSteps = String.join("*", playerA.getPoints());

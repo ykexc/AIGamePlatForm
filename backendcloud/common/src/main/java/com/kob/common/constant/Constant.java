@@ -16,6 +16,8 @@ public final class Constant {
         public final static String FLOW_LIMIT_COUNTER = "flow:counter:";
         public final static String FLOW_LIMIT_BLOCK = "flow:block:";
 
+        public final static String DAY_RANK = "rank:day";
+
     }
 
     public static final class FilterOrder {
